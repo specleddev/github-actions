@@ -74,8 +74,8 @@ else
 fi
 
 mkdir -p "$runner_temp"
-runner_dir="$(mktemp -d "$runner_temp/specled-runner.XXXXXX")"
-trap 'rm -rf "$runner_dir"' EXIT
+runner_dir="${SPECLED_RUNNER_DIR:-$runner_temp/specled-runner}"
+mkdir -p "$runner_dir"
 
 cat > "$runner_dir/mix.exs" <<EOF
 defmodule SpecLedRunner.MixProject do
