@@ -1,0 +1,88 @@
+name: Spec Led Verify
+description: Run Spec Led checks through an isolated specled_ex runner.
+
+inputs:
+  root:
+    description: Repository root relative to GITHUB_WORKSPACE.
+    required: false
+    default: .
+  spec_dir:
+    description: Spec workspace path relative to the target root.
+    required: false
+    default: .spec
+  backend_repo:
+    description: GitHub repository that provides the specled_ex backend.
+    required: false
+    default: specleddev/spec_led_ex
+  backend_ref:
+    description: Git ref used when backend_path is not set.
+    required: false
+    default: main
+  backend_path:
+    description: Local checkout path for specled_ex. Overrides backend_repo and backend_ref.
+    required: false
+    default: ""
+  elixir_version:
+    description: Elixir version for the isolated runner.
+    required: false
+    default: 1.19.5
+  otp_version:
+    description: OTP version for the isolated runner.
+    required: false
+    default: 28.3.1
+  run_commands:
+    description: Whether to execute command verifications during spec.check.
+    required: false
+    default: "true"
+  min_strength:
+    description: Optional minimum verification strength.
+    required: false
+    default: ""
+  diffcheck:
+    description: Run mix spec.diffcheck after mix spec.check.
+    required: false
+    default: "false"
+  diff_base:
+    description: Optional base ref for mix spec.diffcheck.
+    required: false
+    default: ""
+  check_clean:
+    description: Fail if the checks rewrite files under the spec workspace.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup BEAM
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ inputs.elixir_version }}
+        otp-version: ${{ inputs.otp_version }}
+
+    - name: Install Hex and Rebar
+      shell: bash
+      env:
+        MIX_ENV: test
+      run: |
+        set -euo pipefail
+        mix local.hex --force
+        mix local.rebar --force
+
+    - name: Run Spec Led checks
+      shell: bash
+      env:
+        MIX_ENV: test
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_SPEC_DIR: ${{ inputs.spec_dir }}
+        INPUT_BACKEND_REPO: ${{ inputs.backend_repo }}
+        INPUT_BACKEND_REF: ${{ inputs.backend_ref }}
+        INPUT_BACKEND_PATH: ${{ inputs.backend_path }}
+        INPUT_RUN_COMMANDS: ${{ inputs.run_commands }}
+        INPUT_MIN_STRENGTH: ${{ inputs.min_strength }}
+        INPUT_DIFFCHECK: ${{ inputs.diffcheck }}
+        INPUT_DIFF_BASE: ${{ inputs.diff_base }}
+        INPUT_CHECK_CLEAN: ${{ inputs.check_clean }}
+      run: |
+        set -euo pipefail
+        bash "$GITHUB_ACTION_PATH/scripts/run.sh"

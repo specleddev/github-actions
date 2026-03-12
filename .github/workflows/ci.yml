@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "fixtures/**"
+      - "verify/**"
+      - "README.md"
+  push:
+    branches:
+      - main
+      - "codex/**"
+    paths:
+      - ".github/workflows/**"
+      - "fixtures/**"
+      - "verify/**"
+      - "README.md"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.action_name }} / ${{ matrix.fixture_name }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - action_name: verify
+            fixture_name: non-elixir-valid
+            fixture_path: fixtures/non-elixir-valid
+            expect_failure: false
+          - action_name: verify
+            fixture_name: non-elixir-missing-agents
+            fixture_path: fixtures/non-elixir-missing-agents
+            expect_failure: true
+
+    steps:
+      - name: Checkout action repository
+        uses: actions/checkout@v4
+
+      - name: Checkout Spec Led backend
+        uses: actions/checkout@v4
+        with:
+          repository: specleddev/spec_led_ex
+          ref: main
+          path: .vendor/specled_ex
+
+      - name: Run ${{ matrix.action_name }}
+        id: action
+        uses: ./verify
+        continue-on-error: ${{ matrix.expect_failure }}
+        with:
+          root: ${{ matrix.fixture_path }}
+          backend_path: .vendor/specled_ex
+
+      - name: Assert expected result
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ matrix.expect_failure }}" == "true" ]]; then
+            if [[ "${{ steps.action.outcome }}" != "failure" ]]; then
+              echo "Expected the action to fail for fixture ${{ matrix.fixture_name }}."
+              exit 1
+            fi
+          else
+            if [[ "${{ steps.action.outcome }}" != "success" ]]; then
+              echo "Expected the action to succeed for fixture ${{ matrix.fixture_name }}."
+              exit 1
+            fi
+          fi
+
+      - name: Record tested action
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Actions tested"
+            echo "- ${{ matrix.action_name }} (${{ matrix.fixture_name }})"
+          } >> "$GITHUB_STEP_SUMMARY"
