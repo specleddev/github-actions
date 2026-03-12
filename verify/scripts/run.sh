@@ -113,6 +113,15 @@ pushd "$runner_dir" >/dev/null
 
 mix deps.get
 
+if [[ "$run_commands" == "true" ]] && [[ -f "$target_root/mix.exs" ]]; then
+  echo "::group::Prepare target Mix project"
+  (
+    cd "$target_root"
+    MIX_ENV="${MIX_ENV:-test}" mix deps.get
+  )
+  echo "::endgroup::"
+fi
+
 check_command=(mix spec.check --root "$target_root" --spec-dir "$spec_dir")
 
 if [[ "$run_commands" == "false" ]]; then

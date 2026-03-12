@@ -13,6 +13,7 @@ Reusable GitHub Actions for Spec Led Development.
 `verify` is language agnostic at the repository level.
 It does not require the target repository to be an Elixir project.
 The action provisions a temporary Mix runner, installs `specled_ex`, and points the task at the checked-out repository with `--root`.
+When command verifications are enabled and the target repository has a `mix.exs`, the action also runs `mix deps.get` in the target repository before verification.
 
 ### Basic Usage
 
