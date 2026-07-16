@@ -1,5 +1,9 @@
 # specleddev/github-actions
 
+> **Maintenance status**
+>
+> Spec Led Development is no longer maintained. This repository remains public as a reference. No new features, bug fixes, or support are planned.
+
 Reusable GitHub Actions for Spec Led Development.
 
 ## Available Actions
